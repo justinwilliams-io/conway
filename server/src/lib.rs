@@ -1,6 +1,4 @@
-use spacetimedb::{
-    reducer, table, Identity, ReducerContext, ScheduleAt, Table, TimeDuration, Timestamp,
-};
+use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table, TimeDuration};
 
 const GRID_SIZE: u32 = 200;
 
@@ -8,14 +6,8 @@ const GRID_SIZE: u32 = 200;
 pub struct Grid {
     #[primary_key]
     gridid: u32,
+    generation: u32,
     cells: Vec<bool>,
-}
-
-#[table(name = message, public)]
-pub struct Message {
-    sender: Identity,
-    sent: Timestamp,
-    text: String,
 }
 
 #[table(name = update_grid_schedule, scheduled(update_grid))]
@@ -33,9 +25,13 @@ pub fn init(ctx: &ReducerContext) {
     let mut cells = vec![false; (GRID_SIZE * GRID_SIZE) as usize];
     for i in 0..cells.len() {
         let rand: f32 = ctx.random();
-        cells[i] = rand < 0.2;
+        cells[i] = rand < 0.1;
     }
-    ctx.db.grid().insert(Grid { gridid: 0, cells });
+    ctx.db.grid().insert(Grid {
+        gridid: 0,
+        generation: 1,
+        cells,
+    });
 
     ctx.db.update_grid_schedule().insert(UpdateGridSchedule {
         scheduled_id: 0,
@@ -63,7 +59,11 @@ fn update_grid(ctx: &ReducerContext, _args: UpdateGridSchedule) {
             }
         }
 
-        ctx.db.grid().gridid().update(Grid { gridid: 0, cells: next_cells });
+        ctx.db.grid().gridid().update(Grid {
+            gridid: 0,
+            generation: grid.generation + 1,
+            cells: next_cells,
+        });
     }
 }
 
@@ -72,9 +72,30 @@ pub fn reset_grid(ctx: &ReducerContext) {
     let mut cells = vec![false; (GRID_SIZE * GRID_SIZE) as usize];
     for i in 0..cells.len() {
         let rand: f32 = ctx.random();
-        cells[i] = rand < 0.1;
+        cells[i] = rand < 0.2;
     }
-    ctx.db.grid().gridid().update(Grid { gridid: 0, cells });
+    ctx.db.grid().gridid().update(Grid {
+        gridid: 0,
+        generation: 1,
+        cells,
+    });
+}
+
+#[reducer]
+pub fn add_cells(ctx: &ReducerContext, cells_to_add: Vec<u32>) {
+    if let Some(grid) = ctx.db.grid().gridid().find(0) {
+        let mut current_cells = grid.cells;
+
+        for idx in cells_to_add {
+            current_cells[idx as usize] = true;
+        }
+
+        ctx.db.grid().gridid().update(Grid {
+            gridid: 0,
+            generation: grid.generation,
+            cells: current_cells,
+        });
+    }
 }
 
 fn count_neighbors(x: u32, y: u32, current_cells: &Vec<bool>) -> u32 {

@@ -32,6 +32,8 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
+import { AddCells } from "./add_cells_reducer.ts";
+export { AddCells };
 import { ResetGrid } from "./reset_grid_reducer.ts";
 export { ResetGrid };
 import { UpdateGrid } from "./update_grid_reducer.ts";
@@ -40,16 +42,12 @@ export { UpdateGrid };
 // Import and reexport all table handle types
 import { GridTableHandle } from "./grid_table.ts";
 export { GridTableHandle };
-import { MessageTableHandle } from "./message_table.ts";
-export { MessageTableHandle };
 import { UpdateGridScheduleTableHandle } from "./update_grid_schedule_table.ts";
 export { UpdateGridScheduleTableHandle };
 
 // Import and reexport all types
 import { Grid } from "./grid_type.ts";
 export { Grid };
-import { Message } from "./message_type.ts";
-export { Message };
 import { UpdateGridSchedule } from "./update_grid_schedule_type.ts";
 export { UpdateGridSchedule };
 
@@ -60,10 +58,6 @@ const REMOTE_MODULE = {
       rowType: Grid.getTypeScriptAlgebraicType(),
       primaryKey: "gridid",
     },
-    message: {
-      tableName: "message",
-      rowType: Message.getTypeScriptAlgebraicType(),
-    },
     update_grid_schedule: {
       tableName: "update_grid_schedule",
       rowType: UpdateGridSchedule.getTypeScriptAlgebraicType(),
@@ -71,6 +65,10 @@ const REMOTE_MODULE = {
     },
   },
   reducers: {
+    add_cells: {
+      reducerName: "add_cells",
+      argsType: AddCells.getTypeScriptAlgebraicType(),
+    },
     reset_grid: {
       reducerName: "reset_grid",
       argsType: ResetGrid.getTypeScriptAlgebraicType(),
@@ -106,12 +104,29 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
+| { name: "AddCells", args: AddCells }
 | { name: "ResetGrid", args: ResetGrid }
 | { name: "UpdateGrid", args: UpdateGrid }
 ;
 
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
+
+  addCells(cellsToAdd: number[]) {
+    const __args = { cellsToAdd };
+    let __writer = new BinaryWriter(1024);
+    AddCells.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("add_cells", __argsBuffer, this.setCallReducerFlags.addCellsFlags);
+  }
+
+  onAddCells(callback: (ctx: ReducerEventContext, cellsToAdd: number[]) => void) {
+    this.connection.onReducer("add_cells", callback);
+  }
+
+  removeOnAddCells(callback: (ctx: ReducerEventContext, cellsToAdd: number[]) => void) {
+    this.connection.offReducer("add_cells", callback);
+  }
 
   resetGrid() {
     this.connection.callReducer("reset_grid", new Uint8Array(0), this.setCallReducerFlags.resetGridFlags);
@@ -144,6 +159,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  addCellsFlags: CallReducerFlags = 'FullUpdate';
+  addCells(flags: CallReducerFlags) {
+    this.addCellsFlags = flags;
+  }
+
   resetGridFlags: CallReducerFlags = 'FullUpdate';
   resetGrid(flags: CallReducerFlags) {
     this.resetGridFlags = flags;
@@ -161,10 +181,6 @@ export class RemoteTables {
 
   get grid(): GridTableHandle {
     return new GridTableHandle(this.connection.clientCache.getOrCreateTable<Grid>(REMOTE_MODULE.tables.grid));
-  }
-
-  get message(): MessageTableHandle {
-    return new MessageTableHandle(this.connection.clientCache.getOrCreateTable<Message>(REMOTE_MODULE.tables.message));
   }
 
   get updateGridSchedule(): UpdateGridScheduleTableHandle {

@@ -32,6 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 export type Grid = {
   gridid: number,
+  generation: number,
   cells: boolean[],
 };
 
@@ -46,6 +47,7 @@ export namespace Grid {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("gridid", AlgebraicType.createU32Type()),
+      new ProductTypeElement("generation", AlgebraicType.createU32Type()),
       new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createBoolType())),
     ]);
   }
