@@ -30,15 +30,16 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Grid = {
+export type GridInfo = {
   gridid: number,
-  cells: boolean[],
+  generation: number,
+  status: string,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Grid {
+export namespace GridInfo {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -46,16 +47,17 @@ export namespace Grid {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("gridid", AlgebraicType.createU32Type()),
-      new ProductTypeElement("cells", AlgebraicType.createArrayType(AlgebraicType.createBoolType())),
+      new ProductTypeElement("generation", AlgebraicType.createU32Type()),
+      new ProductTypeElement("status", AlgebraicType.createStringType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Grid): void {
-    Grid.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: GridInfo): void {
+    GridInfo.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Grid {
-    return Grid.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): GridInfo {
+    return GridInfo.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

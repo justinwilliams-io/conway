@@ -6,8 +6,22 @@ const GRID_SIZE: u32 = 200;
 pub struct Grid {
     #[primary_key]
     gridid: u32,
-    generation: u32,
     cells: Vec<bool>,
+}
+
+#[table(name = previous_grid)]
+struct PreviousGrid {
+    #[primary_key]
+    gridid: u32,
+    cells: Vec<bool>,
+}
+
+#[table(name = grid_info, public)]
+pub struct GridInfo {
+    #[primary_key]
+    gridid: u32,
+    generation: u32,
+    status: String,
 }
 
 #[table(name = update_grid_schedule, scheduled(update_grid))]
@@ -29,9 +43,18 @@ pub fn init(ctx: &ReducerContext) {
     }
     ctx.db.grid().insert(Grid {
         gridid: 0,
-        generation: 1,
-        cells,
+        cells: cells.clone(),
     });
+
+    ctx.db.grid_info().insert(GridInfo {
+        gridid: 0,
+        generation: 0,
+        status: "Evolving".to_string(),
+    });
+
+    ctx.db
+        .previous_grid()
+        .insert(PreviousGrid { gridid: 0, cells });
 
     ctx.db.update_grid_schedule().insert(UpdateGridSchedule {
         scheduled_id: 0,
@@ -59,9 +82,32 @@ fn update_grid(ctx: &ReducerContext, _args: UpdateGridSchedule) {
             }
         }
 
+        if let Some(previous_grid) = ctx.db.previous_grid().gridid().find(0) {
+            if let Some(grid_info) = ctx.db.grid_info().gridid().find(0) {
+                let is_oscillating = previous_grid.cells == next_cells;
+                let status;
+
+                if is_oscillating {
+                    status = "Oscillating".to_string();
+                } else {
+                    status = "Evolving".to_string();
+                }
+
+                ctx.db.grid_info().gridid().update(GridInfo {
+                    gridid: 0,
+                    status,
+                    generation: grid_info.generation + 1,
+                });
+            }
+
+            ctx.db.previous_grid().gridid().update(PreviousGrid {
+                gridid: 0,
+                cells: current_cells,
+            });
+        }
+
         ctx.db.grid().gridid().update(Grid {
             gridid: 0,
-            generation: grid.generation + 1,
             cells: next_cells,
         });
     }
@@ -74,11 +120,7 @@ pub fn reset_grid(ctx: &ReducerContext) {
         let rand: f32 = ctx.random();
         cells[i] = rand < 0.2;
     }
-    ctx.db.grid().gridid().update(Grid {
-        gridid: 0,
-        generation: 1,
-        cells,
-    });
+    ctx.db.grid().gridid().update(Grid { gridid: 0, cells });
 }
 
 #[reducer]
@@ -92,7 +134,6 @@ pub fn add_cells(ctx: &ReducerContext, cells_to_add: Vec<u32>) {
 
         ctx.db.grid().gridid().update(Grid {
             gridid: 0,
-            generation: grid.generation,
             cells: current_cells,
         });
     }

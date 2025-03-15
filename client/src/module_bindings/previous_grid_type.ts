@@ -30,7 +30,7 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Grid = {
+export type PreviousGrid = {
   gridid: number,
   cells: boolean[],
 };
@@ -38,7 +38,7 @@ export type Grid = {
 /**
  * A namespace for generated helper functions.
  */
-export namespace Grid {
+export namespace PreviousGrid {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -50,12 +50,12 @@ export namespace Grid {
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Grid): void {
-    Grid.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: PreviousGrid): void {
+    PreviousGrid.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Grid {
-    return Grid.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): PreviousGrid {
+    return PreviousGrid.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

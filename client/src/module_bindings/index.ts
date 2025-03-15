@@ -42,12 +42,20 @@ export { UpdateGrid };
 // Import and reexport all table handle types
 import { GridTableHandle } from "./grid_table.ts";
 export { GridTableHandle };
+import { GridInfoTableHandle } from "./grid_info_table.ts";
+export { GridInfoTableHandle };
+import { PreviousGridTableHandle } from "./previous_grid_table.ts";
+export { PreviousGridTableHandle };
 import { UpdateGridScheduleTableHandle } from "./update_grid_schedule_table.ts";
 export { UpdateGridScheduleTableHandle };
 
 // Import and reexport all types
 import { Grid } from "./grid_type.ts";
 export { Grid };
+import { GridInfo } from "./grid_info_type.ts";
+export { GridInfo };
+import { PreviousGrid } from "./previous_grid_type.ts";
+export { PreviousGrid };
 import { UpdateGridSchedule } from "./update_grid_schedule_type.ts";
 export { UpdateGridSchedule };
 
@@ -56,6 +64,16 @@ const REMOTE_MODULE = {
     grid: {
       tableName: "grid",
       rowType: Grid.getTypeScriptAlgebraicType(),
+      primaryKey: "gridid",
+    },
+    grid_info: {
+      tableName: "grid_info",
+      rowType: GridInfo.getTypeScriptAlgebraicType(),
+      primaryKey: "gridid",
+    },
+    previous_grid: {
+      tableName: "previous_grid",
+      rowType: PreviousGrid.getTypeScriptAlgebraicType(),
       primaryKey: "gridid",
     },
     update_grid_schedule: {
@@ -181,6 +199,14 @@ export class RemoteTables {
 
   get grid(): GridTableHandle {
     return new GridTableHandle(this.connection.clientCache.getOrCreateTable<Grid>(REMOTE_MODULE.tables.grid));
+  }
+
+  get gridInfo(): GridInfoTableHandle {
+    return new GridInfoTableHandle(this.connection.clientCache.getOrCreateTable<GridInfo>(REMOTE_MODULE.tables.grid_info));
+  }
+
+  get previousGrid(): PreviousGridTableHandle {
+    return new PreviousGridTableHandle(this.connection.clientCache.getOrCreateTable<PreviousGrid>(REMOTE_MODULE.tables.previous_grid));
   }
 
   get updateGridSchedule(): UpdateGridScheduleTableHandle {
