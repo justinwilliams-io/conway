@@ -90,3 +90,8 @@ textarea:focus {
     flex-direction: column;
     justify-content: center;
 }
+
+.canvas-wrapper {
+    margin: 1em auto;
+    max-width: 95vw;
+}
