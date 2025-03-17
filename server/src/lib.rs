@@ -30,6 +30,7 @@ struct UpdateGridSchedule {
     #[auto_inc]
     scheduled_id: u64,
     scheduled_at: ScheduleAt,
+    gridid: u32,
 }
 
 #[reducer(init)]
@@ -59,31 +60,55 @@ pub fn init(ctx: &ReducerContext) {
     ctx.db.update_grid_schedule().insert(UpdateGridSchedule {
         scheduled_id: 0,
         scheduled_at: half_second.into(),
+        gridid: 0,
     });
 }
 
 #[reducer]
-fn update_grid(ctx: &ReducerContext, _args: UpdateGridSchedule) {
+fn update_grid(ctx: &ReducerContext, args: UpdateGridSchedule) {
     if ctx.sender != ctx.identity() {
         return;
     }
 
-    if let Some(grid) = ctx.db.grid().gridid().find(0) {
+    if let Some(grid) = ctx.db.grid().gridid().find(args.gridid) {
         let current_cells = grid.cells;
         let mut next_cells = vec![false; (GRID_SIZE * GRID_SIZE) as usize];
+        let mut neighbor_counts = vec![0u8; (GRID_SIZE * GRID_SIZE) as usize]; // u8 since max neighbors = 8
 
+        // Pass 1: Compute neighbor counts
         for x in 0..GRID_SIZE {
             for y in 0..GRID_SIZE {
                 let idx = (x * GRID_SIZE + y) as usize;
-                let neighbors = count_neighbors(x, y, &current_cells);
+                if current_cells[idx] {
+                    // For each live cell, increment its neighbors' counts
+                    for dx in -1..=1 {
+                        for dy in -1..=1 {
+                            if dx == 0 && dy == 0 {
+                                continue;
+                            }
+                            let nx = (x as i32 + dx).rem_euclid(GRID_SIZE as i32) as u32;
+                            let ny = (y as i32 + dy).rem_euclid(GRID_SIZE as i32) as u32;
+                            let n_idx = (nx * GRID_SIZE + ny) as usize;
+                            neighbor_counts[n_idx] += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pass 2: Update next_cells based on neighbor counts
+        for x in 0..GRID_SIZE {
+            for y in 0..GRID_SIZE {
+                let idx = (x * GRID_SIZE + y) as usize;
+                let neighbors = neighbor_counts[idx];
                 let is_alive = current_cells[idx];
                 next_cells[idx] = (is_alive && (neighbors == 2 || neighbors == 3))
                     || (!is_alive && neighbors == 3);
             }
         }
 
-        if let Some(previous_grid) = ctx.db.previous_grid().gridid().find(0) {
-            if let Some(grid_info) = ctx.db.grid_info().gridid().find(0) {
+        if let Some(previous_grid) = ctx.db.previous_grid().gridid().find(args.gridid) {
+            if let Some(grid_info) = ctx.db.grid_info().gridid().find(args.gridid) {
                 let is_oscillating = previous_grid.cells == next_cells;
                 let status;
 
@@ -94,38 +119,43 @@ fn update_grid(ctx: &ReducerContext, _args: UpdateGridSchedule) {
                 }
 
                 ctx.db.grid_info().gridid().update(GridInfo {
-                    gridid: 0,
+                    gridid: args.gridid,
                     status,
                     generation: grid_info.generation + 1,
                 });
             }
 
             ctx.db.previous_grid().gridid().update(PreviousGrid {
-                gridid: 0,
+                gridid: args.gridid,
                 cells: current_cells,
             });
         }
 
         ctx.db.grid().gridid().update(Grid {
-            gridid: 0,
+            gridid: args.gridid,
             cells: next_cells,
         });
     }
 }
 
 #[reducer]
-pub fn reset_grid(ctx: &ReducerContext) {
+pub fn reset_grid(ctx: &ReducerContext, gridid: u32) {
     let mut cells = vec![false; (GRID_SIZE * GRID_SIZE) as usize];
     for i in 0..cells.len() {
         let rand: f32 = ctx.random();
         cells[i] = rand < 0.2;
     }
-    ctx.db.grid().gridid().update(Grid { gridid: 0, cells });
+    ctx.db.grid().gridid().update(Grid { gridid, cells });
+    ctx.db.grid_info().gridid().update(GridInfo {
+        gridid,
+        generation: 0,
+        status: "Evolving".to_string(),
+    });
 }
 
 #[reducer]
-pub fn add_cells(ctx: &ReducerContext, cells_to_add: Vec<u32>) {
-    if let Some(grid) = ctx.db.grid().gridid().find(0) {
+pub fn add_cells(ctx: &ReducerContext, gridid: u32, cells_to_add: Vec<u32>) {
+    if let Some(grid) = ctx.db.grid().gridid().find(gridid) {
         let mut current_cells = grid.cells;
 
         for idx in cells_to_add {
@@ -133,26 +163,8 @@ pub fn add_cells(ctx: &ReducerContext, cells_to_add: Vec<u32>) {
         }
 
         ctx.db.grid().gridid().update(Grid {
-            gridid: 0,
+            gridid,
             cells: current_cells,
         });
     }
-}
-
-fn count_neighbors(x: u32, y: u32, current_cells: &Vec<bool>) -> u32 {
-    let mut count = 0;
-    for dx in -1..=1 {
-        for dy in -1..=1 {
-            if dx == 0 && dy == 0 {
-                continue;
-            }
-            let nx = (x as i32 + dx).rem_euclid(GRID_SIZE as i32) as u32;
-            let ny = (y as i32 + dy).rem_euclid(GRID_SIZE as i32) as u32;
-            if current_cells[(nx * GRID_SIZE + ny) as usize] {
-                count += 1;
-            }
-        }
-    }
-
-    count
 }

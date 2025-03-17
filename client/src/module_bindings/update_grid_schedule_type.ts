@@ -33,6 +33,7 @@ import {
 export type UpdateGridSchedule = {
   scheduledId: bigint,
   scheduledAt: { tag: "Interval", value: TimeDuration } | { tag: "Time", value: Timestamp },
+  gridid: number,
 };
 
 /**
@@ -47,6 +48,7 @@ export namespace UpdateGridSchedule {
     return AlgebraicType.createProductType([
       new ProductTypeElement("scheduledId", AlgebraicType.createU64Type()),
       new ProductTypeElement("scheduledAt", AlgebraicType.createScheduleAtType()),
+      new ProductTypeElement("gridid", AlgebraicType.createU32Type()),
     ]);
   }
 

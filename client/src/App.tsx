@@ -3,7 +3,7 @@ import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import './App.css';
 import { DbConnection, ErrorContext } from './module_bindings';
 import GridCanvas from './components/GridCanvas';
-import GridInfo from './components/GridInfo';
+import GridInfoComponent from './components/GridInfo';
 
 const SPACETIMEDB_URI = import.meta.env.VITE_SPACETIME_URI || 'ws://localhost:3000';
 
@@ -50,7 +50,7 @@ function App() {
             return;
         }
 
-        conn?.reducers.addCells(newCells.current);
+        conn?.reducers.addCells(gridId, newCells.current);
         newCells.current = [];
     }
 
@@ -68,7 +68,7 @@ function App() {
             }
             {loaded && <GridCanvas conn={conn} gridId={gridId} newCells={newCells} />}
             <div className='App'>
-                {loaded && <GridInfo conn={conn} gridId={gridId} handleAddCells={handleAddCells} />}
+                {loaded && <GridInfoComponent conn={conn} gridId={gridId} handleAddCells={handleAddCells} />}
                 <div className='new-message'>
                     <p>Powered by <a href='https://spacetimedb.com/home' target='_blank'>SpacetimeDB</a></p>
                 </div>

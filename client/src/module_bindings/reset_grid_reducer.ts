@@ -31,7 +31,9 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type ResetGrid = {};
+export type ResetGrid = {
+  gridid: number,
+};
 
 /**
  * A namespace for generated helper functions.
@@ -43,6 +45,7 @@ export namespace ResetGrid {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
+      new ProductTypeElement("gridid", AlgebraicType.createU32Type()),
     ]);
   }
 

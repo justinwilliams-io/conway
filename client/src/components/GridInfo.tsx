@@ -10,7 +10,7 @@ type GridInfoProps = {
 const GridInfoComponent = ({ conn, gridId, handleAddCells }: GridInfoProps) => {
     const [info, setInfo] = useState<GridInfo>({ gridid: gridId, generation: 0, status: '' });
     const handleResetGrid = () => {
-        conn?.reducers.resetGrid();
+        conn?.reducers.resetGrid(gridId);
     }
 
     useEffect(() => {

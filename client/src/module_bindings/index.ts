@@ -130,31 +130,35 @@ export type Reducer = never
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
-  addCells(cellsToAdd: number[]) {
-    const __args = { cellsToAdd };
+  addCells(gridid: number, cellsToAdd: number[]) {
+    const __args = { gridid, cellsToAdd };
     let __writer = new BinaryWriter(1024);
     AddCells.getTypeScriptAlgebraicType().serialize(__writer, __args);
     let __argsBuffer = __writer.getBuffer();
     this.connection.callReducer("add_cells", __argsBuffer, this.setCallReducerFlags.addCellsFlags);
   }
 
-  onAddCells(callback: (ctx: ReducerEventContext, cellsToAdd: number[]) => void) {
+  onAddCells(callback: (ctx: ReducerEventContext, gridid: number, cellsToAdd: number[]) => void) {
     this.connection.onReducer("add_cells", callback);
   }
 
-  removeOnAddCells(callback: (ctx: ReducerEventContext, cellsToAdd: number[]) => void) {
+  removeOnAddCells(callback: (ctx: ReducerEventContext, gridid: number, cellsToAdd: number[]) => void) {
     this.connection.offReducer("add_cells", callback);
   }
 
-  resetGrid() {
-    this.connection.callReducer("reset_grid", new Uint8Array(0), this.setCallReducerFlags.resetGridFlags);
+  resetGrid(gridid: number) {
+    const __args = { gridid };
+    let __writer = new BinaryWriter(1024);
+    ResetGrid.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("reset_grid", __argsBuffer, this.setCallReducerFlags.resetGridFlags);
   }
 
-  onResetGrid(callback: (ctx: ReducerEventContext) => void) {
+  onResetGrid(callback: (ctx: ReducerEventContext, gridid: number) => void) {
     this.connection.onReducer("reset_grid", callback);
   }
 
-  removeOnResetGrid(callback: (ctx: ReducerEventContext) => void) {
+  removeOnResetGrid(callback: (ctx: ReducerEventContext, gridid: number) => void) {
     this.connection.offReducer("reset_grid", callback);
   }
 

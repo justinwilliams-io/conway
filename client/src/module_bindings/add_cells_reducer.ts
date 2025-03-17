@@ -32,6 +32,7 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 export type AddCells = {
+  gridid: number,
   cellsToAdd: number[],
 };
 
@@ -45,6 +46,7 @@ export namespace AddCells {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
+      new ProductTypeElement("gridid", AlgebraicType.createU32Type()),
       new ProductTypeElement("cellsToAdd", AlgebraicType.createArrayType(AlgebraicType.createU32Type())),
     ]);
   }
